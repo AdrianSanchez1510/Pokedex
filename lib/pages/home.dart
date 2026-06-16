@@ -4,7 +4,6 @@ import '../widgets/searchbar.dart';
 import '../widgets/info.dart';
 import '../services/pokedex.dart';
 
-
 import '../models/pokemon.dart';
 import '../models/pokemonSumm.dart';
 
@@ -37,13 +36,24 @@ class _HomePageState extends State<HomePage> {
       isLoadingList = true;
     });
 
-    final list = await Pokedex.fetchPokemonList();
+    try {
+      final list = await Pokedex.fetchPokemonList();
 
-    setState(() {
-      allPokemon = list;
-      filteredPokemon = list;
-      isLoadingList = false;
-    });
+      if (!mounted) return;
+
+      setState(() {
+        allPokemon = list;
+        filteredPokemon = list;
+        isLoadingList = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingList = false;
+        filteredPokemon = [];
+      });
+    }
   }
 
   Future<void> updateListFromSearch(String query) async {
@@ -53,10 +63,12 @@ class _HomePageState extends State<HomePage> {
 
     await Future.delayed(const Duration(milliseconds: 150));
 
+    if (!mounted) return;
+
     final cleanQuery = query.toLowerCase().trim();
 
     final results = allPokemon.where((pokemon) {
-      return pokemon.name.contains(cleanQuery) ||
+      return pokemon.name.toLowerCase().contains(cleanQuery) ||
           pokemon.id.toString() == cleanQuery;
     }).toList();
 
@@ -66,7 +78,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (results.isNotEmpty) {
-      searchPokemon(results.first.name);
+      await searchPokemon(results.first.name);
     }
   }
 
@@ -80,14 +92,20 @@ class _HomePageState extends State<HomePage> {
     try {
       final result = await Pokedex.fetchPokemon(query);
 
+      if (!mounted) return;
+
       setState(() {
         pokemon = result;
       });
     } catch (_) {
+      if (!mounted) return;
+
       setState(() {
         error = 'Pokemon not found';
       });
     } finally {
+      if (!mounted) return;
+
       setState(() {
         isLoadingPokemon = false;
       });
@@ -112,10 +130,12 @@ class _HomePageState extends State<HomePage> {
                   onSearch: updateListFromSearch,
                 ),
                 const Divider(height: 1),
-                InformationSection(
-                  pokemon: pokemon,
-                  isLoading: isLoadingPokemon,
-                  error: error,
+                Expanded(
+                  child: InformationSection(
+                    pokemon: pokemon,
+                    isLoading: isLoadingPokemon,
+                    error: error,
+                  ),
                 ),
               ],
             ),
