@@ -1,37 +1,44 @@
 import 'package:flutter/material.dart';
-
+import '../models/pokemonSumm.dart';
 class SideIndex extends StatelessWidget {
-  const SideIndex({super.key});
+  final List<PokemonSummary> pokemonList;
+  final bool isLoading;
+  final Function(String) onPokemonSelected;
 
-  static const List<String> items = [
-    '1. Search Pokémon',
-    '2. Pokémon Info',
-    '3. Types',
-    '4. Stats',
-    '5. Abilities',
-  ];
+  const SideIndex({
+    super.key,
+    required this.pokemonList,
+    required this.isLoading,
+    required this.onPokemonSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const SizedBox(
+        width: 250,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Container(
-      width: 230,
+      width: 250,
       color: Colors.grey.shade100,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: ListView(
-        children: items
-            .map(
-              (item) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Text(
-                  item,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-            )
-            .toList(),
+      child: ListView.builder(
+        itemCount: pokemonList.length,
+        itemBuilder: (context, index) {
+          final pokemon = pokemonList[index];
+
+          return ListTile(
+            dense: true,
+            title: Text(
+              '#${pokemon.id.toString().padLeft(4, '0')} ${pokemon.name}',
+            ),
+            onTap: () {
+              onPokemonSelected(pokemon.name);
+            },
+          );
+        },
       ),
     );
   }

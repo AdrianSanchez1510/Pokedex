@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../widgets/index.dart';
-import '../models/pokemon.dart';
 import '../widgets/searchbar.dart';
 import '../widgets/info.dart';
 import '../services/pokedex.dart';
+
+
+import '../models/pokemon.dart';
+import '../models/pokemonSumm.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,12 +17,62 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Pokemon? pokemon;
-  bool isLoading = false;
+
+  List<PokemonSummary> allPokemon = [];
+  List<PokemonSummary> filteredPokemon = [];
+
+  bool isLoadingPokemon = false;
+  bool isLoadingList = false;
   String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    loadPokemonList();
+    searchPokemon('pikachu');
+  }
+
+  Future<void> loadPokemonList() async {
+    setState(() {
+      isLoadingList = true;
+    });
+
+    final list = await Pokedex.fetchPokemonList();
+
+    setState(() {
+      allPokemon = list;
+      filteredPokemon = list;
+      isLoadingList = false;
+    });
+  }
+
+  Future<void> updateListFromSearch(String query) async {
+    setState(() {
+      isLoadingList = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 150));
+
+    final cleanQuery = query.toLowerCase().trim();
+
+    final results = allPokemon.where((pokemon) {
+      return pokemon.name.contains(cleanQuery) ||
+          pokemon.id.toString() == cleanQuery;
+    }).toList();
+
+    setState(() {
+      filteredPokemon = results;
+      isLoadingList = false;
+    });
+
+    if (results.isNotEmpty) {
+      searchPokemon(results.first.name);
+    }
+  }
 
   Future<void> searchPokemon(String query) async {
     setState(() {
-      isLoading = true;
+      isLoadingPokemon = true;
       error = null;
       pokemon = null;
     });
@@ -36,15 +89,9 @@ class _HomePageState extends State<HomePage> {
       });
     } finally {
       setState(() {
-        isLoading = false;
+        isLoadingPokemon = false;
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    searchPokemon('pikachu');
   }
 
   @override
@@ -52,16 +99,22 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Row(
         children: [
-          const SideIndex(),
+          SideIndex(
+            pokemonList: filteredPokemon,
+            isLoading: isLoadingList,
+            onPokemonSelected: searchPokemon,
+          ),
           const VerticalDivider(width: 1),
           Expanded(
             child: Column(
               children: [
-                TopSearchBar(onSearch: searchPokemon),
+                TopSearchBar(
+                  onSearch: updateListFromSearch,
+                ),
                 const Divider(height: 1),
                 InformationSection(
                   pokemon: pokemon,
-                  isLoading: isLoading,
+                  isLoading: isLoadingPokemon,
                   error: error,
                 ),
               ],

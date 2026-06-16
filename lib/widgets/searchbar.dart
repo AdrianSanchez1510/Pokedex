@@ -16,10 +16,7 @@ class _TopSearchBarState extends State<TopSearchBar> {
   final TextEditingController controller = TextEditingController();
 
   void search() {
-    final query = controller.text.trim();
-    if (query.isNotEmpty) {
-      widget.onSearch(query);
-    }
+    widget.onSearch(controller.text);
   }
 
   @override
@@ -37,14 +34,11 @@ class _TopSearchBarState extends State<TopSearchBar> {
             width: 300,
             child: TextField(
               controller: controller,
+              onChanged: widget.onSearch,
               onSubmitted: (_) => search(),
               decoration: InputDecoration(
                 hintText: 'Search Pokémon...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: search,
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
