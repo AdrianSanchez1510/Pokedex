@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../widgets/index.dart';
+import '../models/pokemon.dart';
 import '../widgets/searchbar.dart';
 import '../widgets/info.dart';
+import '../services/pokedex.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,40 +13,57 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int selectedIndex = 0;
+  Pokemon? pokemon;
+  bool isLoading = false;
+  String? error;
 
-  final List<String> sections = [
-    'Introduction',
-    'Getting Started',
-    'Installation',
-    'Configuration',
-    'API Reference',
-    'Examples',
-    'FAQ',
-  ];
+  Future<void> searchPokemon(String query) async {
+    setState(() {
+      isLoading = true;
+      error = null;
+      pokemon = null;
+    });
+
+    try {
+      final result = await Pokedex.fetchPokemon(query);
+
+      setState(() {
+        pokemon = result;
+      });
+    } catch (_) {
+      setState(() {
+        error = 'Pokemon not found';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    searchPokemon('pikachu');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Row(
         children: [
-          SideIndex(
-            selectedIndex: selectedIndex,
-            onSelected: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
-          ),
-
+          const SideIndex(),
           const VerticalDivider(width: 1),
-
           Expanded(
             child: Column(
               children: [
-                TopSearchBar(title: sections[selectedIndex]),
+                TopSearchBar(onSearch: searchPokemon),
                 const Divider(height: 1),
-                InformationSection(title: sections[selectedIndex]),
+                InformationSection(
+                  pokemon: pokemon,
+                  isLoading: isLoading,
+                  error: error,
+                ),
               ],
             ),
           ),
