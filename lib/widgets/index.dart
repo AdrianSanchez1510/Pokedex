@@ -23,7 +23,7 @@ class SideIndex extends StatelessWidget {
 
     return Container(
       width: 250,
-      color: Colors.grey.shade100,
+      color: const Color.fromARGB(255, 255, 154, 154),
       child: ListView.builder(
         itemCount: pokemonList.length,
         itemBuilder: (context, index) {
